@@ -17,6 +17,8 @@ func setupAPP() *cli.App {
 		cmd2.GenCreateSnapshotTxCmd,
 		cmd2.MultiSignTxCmd,
 		cmd2.SendTxCmd,
+		cmd2.UpdateGasPriceByCfgCmd,
+		cmd2.CreateSnapshotByCfgCmd,
 	}
 	app.Flags = []cli.Flag{
 	}

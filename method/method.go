@@ -1,4 +1,4 @@
-package test_case
+package method
 
 import (
 	"encoding/hex"
@@ -46,7 +46,7 @@ func fetchGlobalGasPrice(sdk *ontology_go_sdk.OntologySdk) (uint64, error) {
 }
 
 func fetchAccounts(sdk *ontology_go_sdk.OntologySdk) (payer *ontology_go_sdk.Account,
-	admins []*ontology_go_sdk.Account, err error) {
+	admins []*account.Account, err error) {
 	wallet, err := sdk.OpenWallet("../wallets/wallet_multi.json")
 	if err != nil {
 		return
@@ -64,7 +64,7 @@ func fetchAccounts(sdk *ontology_go_sdk.OntologySdk) (payer *ontology_go_sdk.Acc
 		"02f9e7c9c1734a2223d05b6c99cf69824fcaec777640b761d1cfd195de62417916",
 		"039965917b8906fde226d137e0a6851dd62b2a2e2837958e238bcd6e45c6213531",
 		"0227ac9fc4b3c9ab892308cd1d413349fefcef2fb3b6a7eaf3f5945df51f6982a7"}
-	admins = make([]*ontology_go_sdk.Account, 0)
+	admins = make([]*account.Account, 0)
 	for _, pubKey := range adminPubKeys {
 		pubKeyData, err := hex.DecodeString(pubKey)
 		if err != nil {
@@ -75,16 +75,17 @@ func fetchAccounts(sdk *ontology_go_sdk.OntologySdk) (payer *ontology_go_sdk.Acc
 			return nil, nil, err
 		}
 		addr := types.AddressFromPubKey(pub)
-		acc, err := wallet.GetAccountByAddress(addr.ToBase58(), pwd)
+		sdkAcc, err := wallet.GetAccountByAddress(addr.ToBase58(), pwd)
 		if err != nil {
 			return nil, nil, err
 		}
-		admins = append(admins, acc)
+		acc := account.Account(*sdkAcc)
+		admins = append(admins, &acc)
 	}
 	return
 }
 
-func genMultiSigAddr(accounts []*ontology_go_sdk.Account, m int) (pubkeys []keypair.PublicKey,
+func genMultiSigAddr(accounts []*account.Account, m int) (pubkeys []keypair.PublicKey,
 	addr common.Address, err error) {
 	for _, acc := range accounts {
 		pubkeys = append(pubkeys, acc.PublicKey)
@@ -93,8 +94,8 @@ func genMultiSigAddr(accounts []*ontology_go_sdk.Account, m int) (pubkeys []keyp
 	return
 }
 
-func updateGasPrice(sdk *ontology_go_sdk.OntologySdk, txGasPrice, gasLimit, destinationGasPrice uint64,
-	pubKeys []keypair.PublicKey, admins []*ontology_go_sdk.Account) (string, error) {
+func UpdateGasPrice(sdk *ontology_go_sdk.OntologySdk, txGasPrice, gasLimit, destinationGasPrice uint64,
+	pubKeys []keypair.PublicKey, admins []*account.Account) (string, error) {
 	updateGasPriceTx, err := sdk.Native.GlobalParams.NewSetGlobalParamsTransaction(txGasPrice, gasLimit,
 		map[string]string{"gasPrice": fmt.Sprint(destinationGasPrice)})
 	if err != nil {
@@ -102,8 +103,7 @@ func updateGasPrice(sdk *ontology_go_sdk.OntologySdk, txGasPrice, gasLimit, dest
 	}
 	m := uint16((5*len(pubKeys) + 6) / 7)
 	for _, signer := range admins {
-		acc := account.Account(*signer)
-		err = cmd.MultiSigTransaction(updateGasPriceTx, m, pubKeys, &acc)
+		err = cmd.MultiSigTransaction(updateGasPriceTx, m, pubKeys, signer)
 		if err != nil {
 			return "", fmt.Errorf("multi sig tx, %s", err)
 		}
@@ -115,16 +115,15 @@ func updateGasPrice(sdk *ontology_go_sdk.OntologySdk, txGasPrice, gasLimit, dest
 	return updateGasPriceTxHash.ToHexString(), nil
 }
 
-func createSnapshot(sdk *ontology_go_sdk.OntologySdk, txGasPrice, gasLimit uint64, pubKeys []keypair.PublicKey,
-	admins []*ontology_go_sdk.Account) (string, error) {
+func CreateSnapshot(sdk *ontology_go_sdk.OntologySdk, txGasPrice, gasLimit uint64, pubKeys []keypair.PublicKey,
+	admins []*account.Account) (string, error) {
 	createSnapshotTx, err := sdk.Native.GlobalParams.NewCreateSnapshotTransaction(txGasPrice, gasLimit)
 	if err != nil {
 		return "", fmt.Errorf("create tx, %s", err)
 	}
 	m := uint16((5*len(pubKeys) + 6) / 7)
 	for _, signer := range admins {
-		acc := account.Account(*signer)
-		err = cmd.MultiSigTransaction(createSnapshotTx, m, pubKeys, &acc)
+		err = cmd.MultiSigTransaction(createSnapshotTx, m, pubKeys, signer)
 		if err != nil {
 			return "", fmt.Errorf("multi sig tx, %s", err)
 		}

@@ -1,0 +1,37 @@
+{
+  "Wallets": [
+    {
+      "Path": "./wallets/wallet_multi.json",
+      "Account": "1"
+    },
+    {
+      "Path": "./wallets/wallet_multi.json",
+      "Account": "2"
+    },
+    {
+      "Path": "./wallets/wallet_multi.json",
+      "Account": "3"
+    },
+    {
+      "Path": "./wallets/wallet_multi.json",
+      "Account": "4"
+    },
+    {
+      "Path": "./wallets/wallet_multi.json",
+      "Account": "5"
+    },
+    {
+      "Path": "./wallets/wallet_multi.json",
+      "Account": "6"
+    },
+    {
+      "Path": "./wallets/wallet_multi.json",
+      "Account": "7"
+    }
+  ],
+  "M": 5,
+  "RPCAddr": "http://172.168.3.224:20336",
+  "GasPrice": 500,
+  "GasLimit": 20000,
+  "DestinationGasPrice": 2500
+}

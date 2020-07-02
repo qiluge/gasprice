@@ -1,4 +1,4 @@
-package test_case
+package method
 
 import (
 	"encoding/json"
@@ -107,13 +107,13 @@ func TestGasPrice(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Log("paySomeONGHash", paySomeONGHash.ToHexString())
-	updateGasPriceTxHash, err := updateGasPrice(sdk, cmdGasPrice, gasLimit, destinationGasPrice, pubKeys, admins)
+	updateGasPriceTxHash, err := UpdateGasPrice(sdk, cmdGasPrice, gasLimit, destinationGasPrice, pubKeys, admins)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log("updateGasPriceTxHash", updateGasPriceTxHash)
 	_, _ = sdk.WaitForGenerateBlock(30*time.Second, 1)
-	createSnapshotTxHash, err := createSnapshot(sdk, cmdGasPrice, gasLimit, pubKeys, admins)
+	createSnapshotTxHash, err := CreateSnapshot(sdk, cmdGasPrice, gasLimit, pubKeys, admins)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -163,13 +163,13 @@ func TestGasPrice(t *testing.T) {
 	}
 	t.Log("highGasPriceTx", highGasPriceTx.ToHexString())
 	// restore gasPrice
-	restoreGasPriceTxHash, err := updateGasPrice(sdk, destinationGasPrice, gasLimit, cmdGasPrice, pubKeys, admins)
+	restoreGasPriceTxHash, err := UpdateGasPrice(sdk, destinationGasPrice, gasLimit, cmdGasPrice, pubKeys, admins)
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Log("restoreGasPriceTxHash", restoreGasPriceTxHash)
 	_, _ = sdk.WaitForGenerateBlock(30*time.Second, 1)
-	createSnapshotTxHash, err = createSnapshot(sdk, destinationGasPrice, gasLimit, pubKeys, admins)
+	createSnapshotTxHash, err = CreateSnapshot(sdk, destinationGasPrice, gasLimit, pubKeys, admins)
 	if err != nil {
 		t.Fatal(err)
 	}

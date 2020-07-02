@@ -2,15 +2,20 @@ package cmd
 
 import (
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/ontio/ontology-crypto/keypair"
 	ontology_go_sdk "github.com/ontio/ontology-go-sdk"
+	"github.com/ontio/ontology/account"
 	cmd "github.com/ontio/ontology/cmd/common"
 	"github.com/ontio/ontology/cmd/utils"
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/password"
 	"github.com/ontio/ontology/core/types"
+	"github.com/qiluge/gasprice/config"
+	"github.com/qiluge/gasprice/method"
 	"github.com/urfave/cli"
+	"io/ioutil"
 	"strings"
 )
 
@@ -81,6 +86,24 @@ var SendTxCmd = cli.Command{
 	Flags: []cli.Flag{
 		rawTxFlag,
 		rpcAddrFlag,
+	},
+}
+
+var UpdateGasPriceByCfgCmd = cli.Command{
+	Name:   "update-gas-price",
+	Usage:  "update gas price by config",
+	Action: updateGasPriceByCfg,
+	Flags: []cli.Flag{
+		utils.ConfigFlag,
+	},
+}
+
+var CreateSnapshotByCfgCmd = cli.Command{
+	Name:   "create-snapshot",
+	Usage:  "create snapshot by config",
+	Action: createSnapshotByCfg,
+	Flags: []cli.Flag{
+		utils.ConfigFlag,
 	},
 }
 
@@ -199,4 +222,75 @@ func sendTx(ctx *cli.Context) error {
 	}
 	fmt.Println(hash.ToHexString())
 	return nil
+}
+
+func updateGasPriceByCfg(ctx *cli.Context) error {
+	cfg, accounts, pubkeys, err := parseCfg(ctx)
+	if err != nil {
+		return err
+	}
+	sdk := ontology_go_sdk.NewOntologySdk()
+	sdk.NewRpcClient().SetAddress(cfg.RPCAddr)
+	txHash, err := method.UpdateGasPrice(sdk, cfg.GasPrice, cfg.GasLimit, cfg.DestinationGasPrice,
+		pubkeys, accounts)
+	if err != nil {
+		return err
+	}
+	fmt.Println(txHash)
+	return nil
+}
+
+func createSnapshotByCfg(ctx *cli.Context) error {
+	cfg, accounts, pubkeys, err := parseCfg(ctx)
+	if err != nil {
+		return err
+	}
+	sdk := ontology_go_sdk.NewOntologySdk()
+	sdk.NewRpcClient().SetAddress(cfg.RPCAddr)
+	txHash, err := method.CreateSnapshot(sdk, cfg.GasPrice, cfg.GasLimit, pubkeys, accounts)
+	if err != nil {
+		return err
+	}
+	fmt.Println(txHash)
+	return nil
+}
+
+func parseCfg(ctx *cli.Context) (*config.Config, []*account.Account, []keypair.PublicKey, error) {
+	cfgFilePath := ctx.String(utils.GetFlagName(utils.ConfigFlag))
+	cfgContent, err := ioutil.ReadFile(cfgFilePath)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	cfg := &config.Config{}
+	if err := json.Unmarshal(cfgContent, cfg); err != nil {
+		return nil, nil, nil, err
+	}
+	accounts := make([]*account.Account, 0)
+	pubkeys := make([]keypair.PublicKey, 0)
+	for _, walletCfg := range cfg.Wallets {
+		if !common.FileExisted(walletCfg.Path) {
+			return nil, nil, nil, fmt.Errorf("cannot find wallet file: %s", walletCfg.Path)
+		}
+		wallet, err := account.Open(walletCfg.Path)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		fmt.Printf("please input account %s in wallet %s password\n", walletCfg.Account, walletCfg.Path)
+		pwd, err := password.GetAccountPassword()
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		acc, err := cmd.GetAccountMulti(wallet, pwd, walletCfg.Account)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		accounts = append(accounts, acc)
+		pubkeys = append(pubkeys, acc.PublicKey)
+	}
+	multiSigAddr, err := types.AddressFromMultiPubKeys(pubkeys, cfg.M)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	fmt.Printf("multi sig addr: %s\n", multiSigAddr.ToBase58())
+	return cfg, accounts, pubkeys, nil
 }
