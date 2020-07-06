@@ -12,15 +12,25 @@ import (
 	"github.com/ontio/ontology/common"
 	"github.com/ontio/ontology/common/password"
 	"github.com/ontio/ontology/core/types"
-	"github.com/qiluge/gasprice/config"
-	"github.com/qiluge/gasprice/method"
+	"github.com/qiluge/globalparam/config"
+	"github.com/qiluge/globalparam/method"
 	"github.com/urfave/cli"
 	"io/ioutil"
 	"strings"
 )
 
-var destinationGasPriceFlag = cli.Uint64Flag{
-	Name:  "dest-gas-price",
+var newGasPriceFlag = cli.Uint64Flag{
+	Name:  "new-gas-price",
+	Usage: "define destination gas price",
+}
+
+var newDeployGasFlag = cli.Uint64Flag{
+	Name:  "new-deploy-gas",
+	Usage: "define destination gas price",
+}
+
+var newMigrateGasFlag = cli.Uint64Flag{
+	Name:  "new-migrate-gas",
 	Usage: "define destination gas price",
 }
 
@@ -45,14 +55,16 @@ var rpcAddrFlag = cli.StringFlag{
 	Usage: "rpc addr which sdk used",
 }
 
-var GenUpdateGasPriceTxCmd = cli.Command{
-	Name:   "gen-update-gasprice-tx",
-	Usage:  "generate update gas price tx",
+var GenUpdateGlobalParamTxCmd = cli.Command{
+	Name:   "gen-update-param-tx",
+	Usage:  "generate update global param tx",
 	Action: genUpdateGasPriceTx,
 	Flags: []cli.Flag{
 		utils.GasPriceFlag,
 		utils.GasLimitFlag,
-		destinationGasPriceFlag,
+		newGasPriceFlag,
+		newDeployGasFlag,
+		newMigrateGasFlag,
 	},
 }
 
@@ -89,10 +101,10 @@ var SendTxCmd = cli.Command{
 	},
 }
 
-var UpdateGasPriceByCfgCmd = cli.Command{
-	Name:   "update-gas-price",
-	Usage:  "update gas price by config",
-	Action: updateGasPriceByCfg,
+var UpdateGlobalParamByCfgCmd = cli.Command{
+	Name:   "update-param",
+	Usage:  "update global param price by config",
+	Action: updateGlobalParamByCfg,
 	Flags: []cli.Flag{
 		utils.ConfigFlag,
 	},
@@ -110,10 +122,14 @@ var CreateSnapshotByCfgCmd = cli.Command{
 func genUpdateGasPriceTx(ctx *cli.Context) error {
 	gasPrice := ctx.Uint64(utils.GasPriceFlag.GetName())
 	gasLimit := ctx.Uint64(utils.GasLimitFlag.GetName())
-	destinationGasPrice := ctx.Uint64(destinationGasPriceFlag.GetName())
+	newGasPrice := ctx.Uint64(newGasPriceFlag.GetName())
+	newDeployGas := ctx.Uint64(newDeployGasFlag.GetName())
+	newMigrageGas := ctx.Uint64(newMigrateGasFlag.GetName())
 	sdk := ontology_go_sdk.NewOntologySdk()
 	tx, err := sdk.Native.GlobalParams.NewSetGlobalParamsTransaction(gasPrice, gasLimit, map[string]string{
-		"gasPrice": fmt.Sprint(destinationGasPrice),
+		"gasPrice":                  fmt.Sprint(newGasPrice),
+		"Ontology.Contract.Create":  fmt.Sprint(newDeployGas),
+		"Ontology.Contract.Migrate": fmt.Sprint(newMigrageGas),
 	})
 	if err != nil {
 		return err
@@ -224,15 +240,15 @@ func sendTx(ctx *cli.Context) error {
 	return nil
 }
 
-func updateGasPriceByCfg(ctx *cli.Context) error {
+func updateGlobalParamByCfg(ctx *cli.Context) error {
 	cfg, accounts, pubkeys, err := parseCfg(ctx)
 	if err != nil {
 		return err
 	}
 	sdk := ontology_go_sdk.NewOntologySdk()
 	sdk.NewRpcClient().SetAddress(cfg.RPCAddr)
-	txHash, err := method.UpdateGasPrice(sdk, cfg.GasPrice, cfg.GasLimit, cfg.DestinationGasPrice,
-		pubkeys, accounts)
+	txHash, err := method.UpdateGasPrice(sdk, cfg.GasPrice, cfg.GasLimit, pubkeys, accounts, cfg.NewGasPrice,
+		cfg.NewDeployGas, cfg.NewMigrateGas)
 	if err != nil {
 		return err
 	}

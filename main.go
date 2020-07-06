@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/ontio/ontology/cmd"
-	cmd2 "github.com/qiluge/gasprice/cmd"
+	cmd2 "github.com/qiluge/globalparam/cmd"
 	"github.com/urfave/cli"
 	"os"
 	"runtime"
@@ -13,11 +13,11 @@ func setupAPP() *cli.App {
 	app.Usage = "Ontology GasPrice CLI"
 	app.Copyright = "Copyright in 2018 The Ontology Authors"
 	app.Commands = []cli.Command{
-		cmd2.GenUpdateGasPriceTxCmd,
+		cmd2.GenUpdateGlobalParamTxCmd,
 		cmd2.GenCreateSnapshotTxCmd,
 		cmd2.MultiSignTxCmd,
 		cmd2.SendTxCmd,
-		cmd2.UpdateGasPriceByCfgCmd,
+		cmd2.UpdateGlobalParamByCfgCmd,
 		cmd2.CreateSnapshotByCfgCmd,
 	}
 	app.Flags = []cli.Flag{

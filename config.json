@@ -31,7 +31,9 @@
   ],
   "M": 5,
   "RPCAddr": "http://172.168.3.224:20336",
-  "GasPrice": 500,
+  "GasPrice": 2500,
   "GasLimit": 20000,
-  "DestinationGasPrice": 2500
+  "NewGasPrice": 2500,
+  "NewDeployGas": 4000000,
+  "NewMigrateGas": 4000000
 }

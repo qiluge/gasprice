@@ -94,10 +94,12 @@ func genMultiSigAddr(accounts []*account.Account, m int) (pubkeys []keypair.Publ
 	return
 }
 
-func UpdateGasPrice(sdk *ontology_go_sdk.OntologySdk, txGasPrice, gasLimit, destinationGasPrice uint64,
-	pubKeys []keypair.PublicKey, admins []*account.Account) (string, error) {
+func UpdateGasPrice(sdk *ontology_go_sdk.OntologySdk, txGasPrice, gasLimit uint64, pubKeys []keypair.PublicKey,
+	admins []*account.Account, newGasPrice, deployGas, migrateGas uint64) (string, error) {
 	updateGasPriceTx, err := sdk.Native.GlobalParams.NewSetGlobalParamsTransaction(txGasPrice, gasLimit,
-		map[string]string{"gasPrice": fmt.Sprint(destinationGasPrice)})
+		map[string]string{"gasPrice": fmt.Sprint(newGasPrice),
+			"Ontology.Contract.Create":  fmt.Sprint(deployGas),
+			"Ontology.Contract.Migrate": fmt.Sprint(migrateGas)})
 	if err != nil {
 		return "", fmt.Errorf("create tx, %s", err)
 	}

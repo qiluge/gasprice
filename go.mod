@@ -1,4 +1,4 @@
-module github.com/qiluge/gasprice
+module github.com/qiluge/globalparam
 
 go 1.12
 
